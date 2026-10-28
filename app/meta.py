@@ -70,7 +70,11 @@ def _json_call(system: str, user_content: list[dict] | str, schema: dict, name: 
 FACTS_SCHEMA = {
     "type": "object",
     "properties": {
-        "sam_noun": {"type": "string", "description": "1-2 word concrete noun for the main product, e.g. 'mug', 'water bottle'"},
+        "sam_noun": {"type": "string", "description": "1-3 word concrete noun phrase covering the WHOLE item as sold, "
+                                                    "including its container or lid (e.g. 'candle jar' not 'candle', "
+                                                    "'water bottle', 'mug')"},
+        "sam_noun_alt": {"type": "string", "description": "a different noun phrase for the same whole item, used if the "
+                                                        "first one segments only part of it (e.g. 'glass jar')"},
         "product_name": {"type": "string"},
         "category": {"type": "string"},
         "color": {"type": "string"},
@@ -80,23 +84,28 @@ FACTS_SCHEMA = {
         "props_in_photo": {"type": "array", "items": {"type": "string"}},
         "uncertain": {"type": "array", "items": {"type": "string"},
                        "description": "facts a seller must confirm (size, capacity, material) because the photo cannot prove them"},
+        "seller_notes_en": {"type": "string", "description": "faithful English translation of the seller notes, "
+                                                           "keeping every claim word for word; empty if none"},
+        "seller_specs": {"type": "array", "items": {"type": "string"},
+                         "description": "specs stated by the seller (size, capacity, material, scent, care), in English"},
         "scene_ideas": {"type": "array", "items": {"type": "string"},
                         "description": "2 realistic in-use scenes for a US shopper, each clearly different from the "
                                        "original photo's setting and from each other (e.g. office desk, gift moment)"},
     },
-    "required": ["sam_noun", "product_name", "category", "color", "material", "visible_features",
-                 "visible_text_or_logos", "props_in_photo", "uncertain", "scene_ideas"],
+    "required": ["sam_noun", "sam_noun_alt", "product_name", "category", "color", "material", "visible_features",
+                 "visible_text_or_logos", "props_in_photo", "uncertain", "seller_notes_en", "seller_specs", "scene_ideas"],
 }
 
 
 def understand(photo: Image.Image, seller_notes: str = "") -> dict:
     if mock_mode():
         return {
-            "sam_noun": "mug", "product_name": "Speckled ceramic coffee mug", "category": "Home & Kitchen > Mugs",
+            "sam_noun": "mug", "sam_noun_alt": "cup", "product_name": "Speckled ceramic coffee mug", "category": "Home & Kitchen > Mugs",
             "color": "cream with brown speckles", "material": "ceramic (stoneware look)",
             "visible_features": ["wide C-shaped handle", "matte speckled glaze", "straight cylinder body"],
             "visible_text_or_logos": [], "props_in_photo": ["wooden table", "coffee beans"],
             "uncertain": ["capacity in oz", "dishwasher and microwave safe"],
+            "seller_notes_en": "", "seller_specs": [],
             "scene_ideas": ["morning coffee on a sunlit kitchen counter", "desk with laptop and notebook"],
         }
     content = [
@@ -105,7 +114,9 @@ def understand(photo: Image.Image, seller_notes: str = "") -> dict:
         {"type": "image_url", "image_url": {"url": data_url(photo)}},
     ]
     return _json_call(
-        "You are an Amazon catalog specialist. Never invent specs you cannot see; put them in 'uncertain'.",
+        "You are an Amazon catalog specialist. Seller notes are the seller's confirmed facts: copy their specs into "
+        "seller_specs and do not list them as uncertain. Never invent specs that neither the photo nor the seller gives; "
+        "put those in 'uncertain'.",
         content, FACTS_SCHEMA, "ProductFacts")
 
 
@@ -233,10 +244,10 @@ LISTING_SCHEMA = {
 
 
 def write_listing(facts: dict, brand: str, rules_brief: str, feedback: list[str] | None = None,
-                  previous: dict | None = None) -> dict:
+                  previous: dict | None = None, seller_notes: str = "") -> dict:
     if mock_mode():
         return _mock_listing(feedback)
-    task = {"facts": facts, "brand": brand, "rules": rules_brief}
+    task = {"facts": facts, "brand": brand, "seller_notes": seller_notes, "rules": rules_brief}
     if feedback:
         task["previous_attempt"] = previous
         task["fix_only_these_violations"] = feedback
@@ -244,7 +255,10 @@ def write_listing(facts: dict, brand: str, rules_brief: str, feedback: list[str]
         "You write Amazon.com (US) listings for small sellers that convert shoppers. Follow every rule exactly. "
         "Title: brand, then what it is in shopper words (e.g. 'Ceramic Coffee Mug'), then the key look or feature. "
         "Bullets: each starts with a short benefit label in Title Case followed by ' - ', then a concrete sentence on "
-        "why it matters to the buyer (look, feel, use, care, gifting). Describe the product as sold, never as "
+        "why it matters to the buyer (look, feel, use, care, gifting). Seller notes may be in any language (often "
+        "Korean). facts.seller_specs are confirmed: always use them (size, material, scent, burn time, care) in the title "
+        "and bullets. Keep the seller's selling points only where Amazon rules allow; drop restricted claims silently. "
+        "Write natural US English. Describe the product as sold, never as "
         "'pictured' and never the props or contents in the photo. Use only facts given; for 'uncertain' facts write "
         "nothing rather than guess. Description: 2 short paragraphs a shopper would enjoy reading. "
         "When fixing, change only what the violations require and keep everything else.",

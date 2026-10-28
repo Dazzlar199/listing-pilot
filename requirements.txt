@@ -5,3 +5,4 @@ pillow>=10.4
 numpy>=1.26
 python-multipart>=0.0.9
 pytest>=8
+scipy>=1.13

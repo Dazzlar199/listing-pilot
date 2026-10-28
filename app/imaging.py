@@ -31,6 +31,49 @@ def mask_bbox(mask: np.ndarray) -> tuple[int, int, int, int] | None:
     return int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
 
 
+def fill_enclosed_holes(photo: Image.Image, mask: np.ndarray, see_through_dist: float = 90.0) -> tuple[np.ndarray, dict]:
+    """SAM often leaves enclosed parts out (a label, the wax in a jar, coffee in a cup).
+
+    Fill every hole fully enclosed by the mask, except holes whose colour matches the
+    background just outside the product: those are real openings (a mug handle).
+    """
+    from scipy import ndimage
+
+    m = mask.astype(bool)
+    holes = ndimage.binary_fill_holes(m) & ~m
+    labels, n = ndimage.label(holes)
+    if n == 0:
+        return mask, {"filled": 0, "kept_open": 0}
+    a = np.asarray(load_rgb(photo), dtype=np.float32)
+    outside = ~ndimage.binary_dilation(m, iterations=6)
+    H, W = m.shape
+    out = m.copy()
+    filled = kept = 0
+    min_px = max(50, m.sum() // 2000)
+    for i in range(1, n + 1):
+        region = labels == i
+        if region.sum() < min_px:          # pin-holes: always fill
+            out |= region
+            continue
+        # Compare with the background right next to this hole (a window twice its size).
+        ys, xs = np.nonzero(region)
+        hy, hx = ys.max() - ys.min() + 1, xs.max() - xs.min() + 1
+        win = np.zeros_like(m)
+        win[max(0, ys.min() - hy):min(H, ys.max() + hy), max(0, xs.min() - hx):min(W, xs.max() + hx)] = True
+        near = a[win & outside]
+        if len(near) < 30:
+            out |= region
+            filled += 1
+            continue
+        dist = float(np.linalg.norm(np.median(a[region], axis=0) - np.median(near, axis=0)))
+        if dist < see_through_dist:
+            kept += 1
+        else:
+            out |= region
+            filled += 1
+    return out.astype(np.uint8), {"filled": filled, "kept_open": kept}
+
+
 def compose_on_white(photo: Image.Image, mask: np.ndarray, size: int = 2000, fill: float = 0.87,
                      feather: float = 1.2) -> Image.Image:
     """Cut the product out with its mask and place it centred on a pure-white square.

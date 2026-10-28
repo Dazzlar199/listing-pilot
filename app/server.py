@@ -36,7 +36,8 @@ def index():
 
 @app.get("/api/status")
 def status():
-    return {"mock": meta.mock_mode(), "samples": sorted(p.stem for p in SAMPLES.glob("*.jpg"))}
+    presets = json.loads((SAMPLES / "presets.json").read_text()) if (SAMPLES / "presets.json").exists() else {}
+    return {"mock": meta.mock_mode(), "samples": sorted(p.stem for p in SAMPLES.glob("*.jpg")), "presets": presets}
 
 
 def _start(photo: Image.Image, brand: str, notes: str) -> str:

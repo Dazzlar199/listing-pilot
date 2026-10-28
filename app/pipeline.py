@@ -74,14 +74,19 @@ def _image_problems(pix: imaging.ImageReport, review: dict) -> list[str]:
 
 def make_main_image(run: Run, photo: Image.Image, facts: dict) -> dict:
     source, source_name = photo, "seller photo"
+    noun = facts["sam_noun"]
     history = []
     for attempt in range(1, MAX_IMAGE_TRIES + 1):
-        run.emit("main_image", "work", f"Attempt {attempt}: SAM 3.1 segments the '{facts['sam_noun']}' in the {source_name}")
-        mask, info = meta.segment(source, facts["sam_noun"])
+        run.emit("main_image", "work", f"Attempt {attempt}: SAM 3.1 segments the '{noun}' in the {source_name}")
+        mask, info = meta.segment(source, noun)
         if info.get("matches", 0) == 0:
             run.emit("main_image", "warn", "SAM 3.1 found no match; asking Muse Image for a clean studio shot")
             problems = ["segmentation found no product"]
         else:
+            mask, holes = imaging.fill_enclosed_holes(source, mask)
+            if holes["filled"]:
+                run.emit("main_image", "work", f"Filled {holes['filled']} enclosed part(s) SAM left out; "
+                                               f"kept {holes['kept_open']} real opening(s)")
             mask_url = run.save(Image.fromarray(mask * 255), f"mask_{attempt}.png")
             main = imaging.compose_on_white(source, mask)
             url = run.save(main, f"main_{attempt}.jpg", quality=95)
@@ -99,6 +104,10 @@ def make_main_image(run: Run, photo: Image.Image, facts: dict) -> dict:
             run.emit("main_image", "fail", "Found: " + "; ".join(problems), image=url, problems=problems)
         if attempt == MAX_IMAGE_TRIES:
             break
+        partial = any(w in " ".join(problems).lower() for w in ("missing", "only part", "cropped", "partial"))
+        if partial and facts.get("sam_noun_alt") and noun != facts["sam_noun_alt"]:
+            noun = facts["sam_noun_alt"]
+            run.emit("main_image", "work", f"Only part of the product was cut out; switching the SAM prompt to '{noun}'")
         run.emit("main_image", "work", "Muse Image re-shoots the product as a clean studio packshot")
         source = meta.studio_retouch(photo, facts, "; ".join(problems))
         source_name = "Muse Image studio shot"
@@ -108,12 +117,12 @@ def make_main_image(run: Run, photo: Image.Image, facts: dict) -> dict:
     return {"image": last.get("image"), "file": None, "attempts": history, "needs_review": True}
 
 
-def make_listing(run: Run, facts: dict, brand: str) -> dict:
+def make_listing(run: Run, facts: dict, brand: str, notes: str = "") -> dict:
     listing, feedback, history = None, None, []
     for attempt in range(1, MAX_TEXT_TRIES + 1):
         verb = "writes" if attempt == 1 else "fixes only the flagged parts of"
         run.emit("listing", "work", f"Attempt {attempt}: Spark {verb} the title, 5 bullets, description and search terms")
-        listing = meta.write_listing(facts, brand, rules.BRIEF, feedback, listing)
+        listing = meta.write_listing(facts, brand, rules.BRIEF, feedback, listing, notes)
         found = checks.check_listing(listing, brand)
         fails = [v for v in found if v.severity == "fail"]
         warns = [v for v in found if v.severity == "warn"]
@@ -178,9 +187,14 @@ def run_pipeline(run: Run, photo: Image.Image, brand: str, notes: str = "") -> d
         run.emit("understand", "work", "Spark looks at the photo: what is the product, what is just a prop, what can't be known")
         facts = meta.understand(photo, notes)
         run.emit("understand", "pass", f"Product: {facts['product_name']}", facts=facts)
+        flagged = checks.check_seller_notes(facts.get("seller_notes_en", ""))
+        if flagged:
+            run.emit("understand", "warn", f"Your notes contain {len(flagged)} phrase(s) Amazon restricts; "
+                                           "the agent will leave them out", violations=[v.as_dict() for v in flagged])
+        facts["notes_flagged"] = [v.as_dict() for v in flagged]
 
         main = make_main_image(run, photo, facts)
-        listing = make_listing(run, facts, brand)
+        listing = make_listing(run, facts, brand, notes)
         life = make_lifestyle(run, main.get("file"), photo, facts)
         result = {"brand": brand, "facts": facts, "main": main, "listing": listing, "lifestyle": life}
         result["package"] = package(run, result)

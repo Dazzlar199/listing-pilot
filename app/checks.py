@@ -177,3 +177,19 @@ def check_listing(listing: dict, brand: str = "") -> list[Violation]:
             + check_bullets(listing.get("bullets", []))
             + check_description(listing.get("description", ""))
             + check_search_terms(listing.get("search_terms", ""), listing.get("title", ""), brand))
+
+
+def check_seller_notes(notes_en: str) -> list[Violation]:
+    """Claims in the seller's own words that Amazon restricts. The agent leaves these out and says why."""
+    if not notes_en:
+        return []
+    found = []
+    for phrases, rule, why, src in [
+        (R.PESTICIDE + R.BULLET_BANNED, "notes.restricted_claim", "restricted claim", R.SRC_BULLETS_GS),
+        (R.UNVERIFIED_CLAIMS, "notes.unproven_claim", "claim that needs proof", R.SRC_PESTICIDE),
+        (R.PROMO_PHRASES, "notes.promo", "promotional wording", R.SRC_TITLE_GS),
+        (R.GUARANTEE_PHRASES, "notes.guarantee", "refund or guarantee wording", R.SRC_BULLETS),
+    ]:
+        for p in _phrases(notes_en, phrases):
+            found.append(Violation("seller notes", rule, "warn", f'"{p}" is a {why}; left out of the listing.', src))
+    return found

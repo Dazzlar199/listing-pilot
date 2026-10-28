@@ -43,6 +43,7 @@ button.go{width:100%;margin-top:16px;padding:12px;border:0;border-radius:11px;ba
 button.go:disabled{opacity:.45;cursor:default}
 .samples{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .samples button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:9px;padding:6px 10px;font:500 13px Inter;cursor:pointer}
+.samples button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .how{margin-top:18px;font-size:13px;color:var(--muted)}
 .how ol{padding-left:18px;margin:8px 0 0}
 .how b{color:var(--ink);font-weight:600}
@@ -169,8 +170,10 @@ paintSteps();
 
 fetch("/api/status").then(r=>r.json()).then(s=>{
   if(s.mock){ $("#mode").textContent="Mock mode — no API key"; $("#mode").classList.add("mock"); }
-  $("#samples").innerHTML = s.samples.map(n=>`<button data-s="${esc(n)}">Try sample: ${esc(n)}</button>`).join("");
-  $("#samples").onclick = e => { const n=e.target.dataset.s; if(!n) return; sample=n; file=null; preview(`/samples/${n}.jpg`); };
+  $("#samples").innerHTML = s.samples.map(n=>`<button data-s="${esc(n)}">${esc(n[0].toUpperCase()+n.slice(1))}</button>`).join("");
+  $("#samples").onclick = e => { const n=e.target.dataset.s; if(!n) return; sample=n; file=null; preview(`/samples/${n}.jpg`);
+    const p=(s.presets||{})[n]; if(p){ $("#brand").value=p.brand; $("#notes").value=p.notes; }
+    document.querySelectorAll("#samples button").forEach(b=>b.classList.toggle("on", b.dataset.s===n)); };
 });
 
 function preview(src){ $("#dropin").innerHTML = `<img src="${src}" alt="product photo">`; $("#go").disabled=false; }

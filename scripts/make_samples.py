@@ -11,6 +11,12 @@ SAMPLES = {
     "mug": "Casual smartphone photo taken by a small shop owner: a handmade speckled cream ceramic coffee mug "
            "with a wide handle on a cluttered wooden kitchen table, a few coffee beans and a spoon next to it, "
            "warm window light, slightly off-center, no text, no logos",
+    "candle": "Casual smartphone photo by a small shop owner: a hand-poured scented candle in an amber glass jar "
+              "with a plain kraft paper label without any writing, on a messy bedroom dresser next to a hair tie, "
+              "a phone charger cable and a lip balm, evening lamp light, slightly tilted, no readable text, no logos",
+    "bottle": "Casual smartphone photo by a small shop owner: a matte sage green insulated stainless steel water "
+              "bottle with a bamboo lid, standing on a gym bench next to a grey towel and a jump rope, mixed fluorescent "
+              "light, off-center, no text, no logos",
 }
 out = Path("samples"); out.mkdir(exist_ok=True)
 for name, prompt in SAMPLES.items():
