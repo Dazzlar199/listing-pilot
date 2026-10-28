@@ -80,7 +80,9 @@ FACTS_SCHEMA = {
         "props_in_photo": {"type": "array", "items": {"type": "string"}},
         "uncertain": {"type": "array", "items": {"type": "string"},
                        "description": "facts a seller must confirm (size, capacity, material) because the photo cannot prove them"},
-        "scene_ideas": {"type": "array", "items": {"type": "string"}, "description": "2 realistic in-use scenes"},
+        "scene_ideas": {"type": "array", "items": {"type": "string"},
+                        "description": "2 realistic in-use scenes for a US shopper, each clearly different from the "
+                                       "original photo's setting and from each other (e.g. office desk, gift moment)"},
     },
     "required": ["sam_noun", "product_name", "category", "color", "material", "visible_features",
                  "visible_text_or_logos", "props_in_photo", "uncertain", "scene_ideas"],
@@ -239,8 +241,12 @@ def write_listing(facts: dict, brand: str, rules_brief: str, feedback: list[str]
         task["previous_attempt"] = previous
         task["fix_only_these_violations"] = feedback
     return _json_call(
-        "You write Amazon.com (US) listings for small sellers. Follow every rule exactly. "
-        "Use only facts given; for 'uncertain' facts write nothing rather than guess. "
+        "You write Amazon.com (US) listings for small sellers that convert shoppers. Follow every rule exactly. "
+        "Title: brand, then what it is in shopper words (e.g. 'Ceramic Coffee Mug'), then the key look or feature. "
+        "Bullets: each starts with a short benefit label in Title Case followed by ' - ', then a concrete sentence on "
+        "why it matters to the buyer (look, feel, use, care, gifting). Describe the product as sold, never as "
+        "'pictured' and never the props or contents in the photo. Use only facts given; for 'uncertain' facts write "
+        "nothing rather than guess. Description: 2 short paragraphs a shopper would enjoy reading. "
         "When fixing, change only what the violations require and keep everything else.",
         json.dumps(task, ensure_ascii=False), LISTING_SCHEMA, "Listing", effort="medium")
 

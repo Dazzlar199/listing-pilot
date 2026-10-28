@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Listing Pilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --ink:#1b1d22; --muted:#6b7079; --line:#e7e4de;
+  --accent:#1f5eff; --accent-soft:#e8eeff; --ok:#12805c; --ok-soft:#e3f4ec; --bad:#c2382b; --bad-soft:#fbe9e7;
+  --warn:#a15c00; --warn-soft:#fff3df; --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121317; --panel:#1b1d22; --ink:#ecebe8; --muted:#9aa0aa; --line:#2b2e35;
+    --accent:#7ea2ff; --accent-soft:#1d2540; --ok:#4cc69a; --ok-soft:#14302a; --bad:#ff7a6b; --bad-soft:#3a1d1a;
+    --warn:#f0b35a; --warn-soft:#3a2c14;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+header{display:flex;align-items:center;gap:12px;padding:18px 28px;border-bottom:1px solid var(--line);background:var(--panel)}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--ink);display:grid;place-items:center}
+.logo svg{width:18px;height:18px;stroke:var(--panel)}
+header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
+header .tag{color:var(--muted);font-size:13px}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.pill{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.pill.mock{background:var(--warn-soft);color:var(--warn)}
+main{display:grid;grid-template-columns:340px 1fr;gap:24px;padding:24px 28px;max-width:1440px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 14px;font-weight:600}
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.15s;display:block}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop img{width:100%;border-radius:8px;display:block}
+.drop .hint{color:var(--muted);font-size:13px}
+label.f{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+input[type=text],textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+button.go{width:100%;margin-top:16px;padding:12px;border:0;border-radius:11px;background:var(--ink);color:var(--panel);font:600 15px Inter,sans-serif;cursor:pointer}
+button.go:disabled{opacity:.45;cursor:default}
+.samples{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.samples button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:9px;padding:6px 10px;font:500 13px Inter;cursor:pointer}
+.how{margin-top:18px;font-size:13px;color:var(--muted)}
+.how ol{padding-left:18px;margin:8px 0 0}
+.how b{color:var(--ink);font-weight:600}
+
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.step{padding:10px 12px;border-radius:11px;background:var(--panel);border:1px solid var(--line);font-size:13px}
+.step .n{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:11px}
+.step .t{font-weight:600}
+.step.work{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.step.pass{border-color:var(--ok)} .step.pass .n{color:var(--ok)}
+.step.fail{border-color:var(--bad)} .step.fail .n{color:var(--bad)}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px}
+.log{max-height:620px;overflow:auto;padding-right:4px}
+.ev{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);animation:in .25s ease}
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+.ev .dot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;margin-top:1px}
+.ev .dot svg{width:13px;height:13px;stroke-width:2.5}
+.ev.work .dot{background:var(--accent-soft);color:var(--accent)}
+.ev.pass .dot{background:var(--ok-soft);color:var(--ok)}
+.ev.fail .dot{background:var(--bad-soft);color:var(--bad)}
+.ev.warn .dot{background:var(--warn-soft);color:var(--warn)}
+.ev .m{font-size:14px}
+.ev .s{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ev img{margin-top:8px;width:132px;height:132px;object-fit:cover;border-radius:9px;border:1px solid var(--line);background:#fff}
+.ev .imgs{display:flex;gap:8px}
+.viol{margin:8px 0 0;padding:0;list-style:none;font-size:13px}
+.viol li{padding:4px 8px;border-radius:7px;margin-bottom:4px;background:var(--bad-soft);color:var(--bad)}
+.viol li.w{background:var(--warn-soft);color:var(--warn)}
+.spin{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+
+.empty{color:var(--muted);text-align:center;padding:80px 20px}
+.empty svg{width:40px;height:40px;stroke:var(--line);margin-bottom:8px}
+.gallery{display:grid;grid-template-columns:1fr;gap:10px}
+.hero{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;aspect-ratio:1;display:grid;place-items:center}
+.hero img{width:100%;height:100%;object-fit:contain}
+.thumbs{display:flex;gap:8px}
+.thumbs img{width:72px;height:72px;object-fit:cover;border-radius:9px;border:2px solid transparent;cursor:pointer;background:#fff}
+.thumbs img.on{border-color:var(--accent)}
+.lt{font-size:19px;font-weight:600;line-height:1.35;margin:14px 0 4px}
+.meta{font-size:12px;color:var(--muted);font-family:"JetBrains Mono",monospace}
+.bul{padding-left:18px;margin:12px 0}
+.bul li{margin-bottom:6px;font-size:14px}
+.desc{font-size:14px;color:var(--muted);white-space:pre-line}
+.kw{font-family:"JetBrains Mono",monospace;font-size:12px;background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:8px;word-break:break-word}
+.rep{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.rep table{width:100%;border-collapse:collapse;font-size:13px}
+.rep td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.rep td:first-child{width:26px}
+.rep a{color:var(--muted);font-size:12px}
+.ok{color:var(--ok)} .no{color:var(--bad)}
+.before{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.before figure{margin:0}
+.before img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px;border:1px solid var(--line);background:#fff}
+.before figcaption{font-size:11px;color:var(--muted);margin-top:4px}
+a.dl{display:inline-flex;gap:8px;align-items:center;margin-top:16px;padding:11px 16px;border-radius:11px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}
+a.dl svg{width:16px;height:16px;stroke:#fff}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{border:0;background:none;color:var(--muted);font:600 13px Inter;padding:6px 10px;border-radius:8px;cursor:pointer}
+.tabs button.on{background:var(--accent-soft);color:var(--accent)}
+@media (max-width:1000px){main{grid-template-columns:1fr;padding:16px}.grid2{grid-template-columns:1fr}.steps{grid-template-columns:repeat(2,1fr)}header{padding:14px 16px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></div>
+  <div><h1>Listing Pilot</h1><div class="tag">One product photo in. A compliance-checked Amazon listing out.</div></div>
+  <div class="right"><span id="mode" class="pill">Meta Muse Spark · SAM 3.1 · Muse Image</span></div>
+</header>
+<main>
+  <section>
+    <div class="card">
+      <h2>Seller input</h2>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="image/*" hidden>
+        <div id="dropin"><div style="font-weight:600">Drop a phone photo of your product</div><div class="hint">Cluttered table, bad light — that's the point.</div></div>
+      </label>
+      <div class="samples" id="samples"></div>
+      <label class="f" for="brand">Brand</label>
+      <input type="text" id="brand" value="Hearth &amp; Clay">
+      <label class="f" for="notes">Facts only you know (optional)</label>
+      <textarea id="notes" placeholder="e.g. 12 oz, dishwasher and microwave safe, handmade in Ohio"></textarea>
+      <button class="go" id="go" disabled>Build my listing</button>
+      <div class="how">
+        <b>What the agent does</b>
+        <ol>
+          <li><b>Spark</b> separates the product from props and lists what it can't know.</li>
+          <li><b>SAM 3.1</b> cuts the product out; pixels are placed on pure white at 85%+ fill.</li>
+          <li><b>Spark</b> inspects the result. If it fails, <b>Muse Image</b> re-shoots it in a studio and the loop runs again.</li>
+          <li><b>Spark</b> writes the copy; a rule engine checks Amazon's 2026 rules and sends back only what failed.</li>
+          <li><b>Muse Image</b> stages lifestyle shots; Spark checks the product still matches.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="steps" id="steps"></div>
+    <div class="grid2">
+      <div class="card"><h2>Agent log</h2><div class="log" id="log"><div class="empty">The agent's work shows up here, step by step.</div></div></div>
+      <div class="card" id="result"><h2>Listing</h2><div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 15l5-5 4 4 3-3 6 6"/></svg>
+        <div>Your listing package appears here.</div></div></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const STEPS = [["understand","Understand"],["main_image","Main image"],["listing","Listing copy"],["lifestyle","Lifestyle"],["package","Package"]];
+const ICON = {
+  work:'<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>',
+  pass:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5 9-10"/></svg>',
+  fail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 8v5M12 17h.01"/></svg>',
+};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let file = null, sample = null, stepState = {};
+
+function paintSteps(){
+  $("#steps").innerHTML = STEPS.map(([k,t],i)=>`<div class="step ${stepState[k]||""}"><div class="n">0${i+1} ${stepState[k]==="pass"?"done":stepState[k]==="fail"?"retry":stepState[k]==="work"?"running":"waiting"}</div><div class="t">${t}</div></div>`).join("");
+}
+paintSteps();
+
+fetch("/api/status").then(r=>r.json()).then(s=>{
+  if(s.mock){ $("#mode").textContent="Mock mode — no API key"; $("#mode").classList.add("mock"); }
+  $("#samples").innerHTML = s.samples.map(n=>`<button data-s="${esc(n)}">Try sample: ${esc(n)}</button>`).join("");
+  $("#samples").onclick = e => { const n=e.target.dataset.s; if(!n) return; sample=n; file=null; preview(`/samples/${n}.jpg`); };
+});
+
+function preview(src){ $("#dropin").innerHTML = `<img src="${src}" alt="product photo">`; $("#go").disabled=false; }
+$("#file").onchange = e => { file = e.target.files[0]; sample=null; if(file) preview(URL.createObjectURL(file)); };
+const drop = $("#drop");
+drop.addEventListener("dragover", e=>{e.preventDefault();drop.classList.add("over")});
+drop.addEventListener("dragleave", ()=>drop.classList.remove("over"));
+drop.addEventListener("drop", e=>{e.preventDefault();drop.classList.remove("over");file=e.dataTransfer.files[0];sample=null;if(file)preview(URL.createObjectURL(file));});
+
+$("#go").onclick = async () => {
+  const fd = new FormData();
+  if(file) fd.append("photo", file); else fd.append("sample", sample);
+  fd.append("brand", $("#brand").value); fd.append("notes", $("#notes").value);
+  $("#go").disabled = true; $("#go").textContent = "Agent is working…";
+  $("#log").innerHTML = ""; stepState = {}; paintSteps();
+  const r = await fetch("/api/run",{method:"POST",body:fd});
+  if(!r.ok){ alertBox((await r.json()).detail); return; }
+  watch((await r.json()).id);
+};
+
+function alertBox(msg){ $("#log").innerHTML = `<div class="ev fail"><div class="dot">${ICON.fail}</div><div class="m">${esc(msg)}</div></div>`; $("#go").disabled=false; $("#go").textContent="Build my listing"; }
+
+function watch(id){
+  const es = new EventSource(`/api/runs/${id}/events`);
+  es.onmessage = m => addEvent(JSON.parse(m.data));
+  es.addEventListener("done", async () => {
+    es.close(); $("#go").disabled=false; $("#go").textContent="Build another listing";
+    const r = await fetch(`/api/runs/${id}`); if(r.ok) showResult(await r.json(), id);
+  });
+}
+
+function addEvent(e){
+  if(STEPS.some(([k])=>k===e.step)){ stepState[e.step] = e.status==="warn" ? "pass" : e.status; paintSteps(); }
+  const imgs = [e.image, e.mask].filter(Boolean).map(u=>`<img src="${u}" alt="">`).join("");
+  const v = (e.violations||[]).map(x=>`<li class="${x.severity==="warn"?"w":""}">${esc(x.field)} — ${esc(x.message)}</li>`).join("");
+  const probs = (e.problems||[]).map(p=>`<li>${esc(p)}</li>`).join("");
+  const el = document.createElement("div");
+  el.className = `ev ${e.status}`;
+  el.innerHTML = `<div class="dot">${ICON[e.status]||ICON.work}</div><div><div class="s">${esc(e.step.replace("_"," "))}</div><div class="m">${esc(e.msg)}</div>${imgs?`<div class="imgs">${imgs}</div>`:""}${v||probs?`<ul class="viol">${v}${probs}</ul>`:""}</div>`;
+  // finished "work" spinners become neutral once something newer arrives
+  document.querySelectorAll(".ev.work .spin").forEach(s=>s.classList.remove("spin"));
+  $("#log").appendChild(el); $("#log").scrollTop = 1e9;
+}
+
+function showResult(res, id){
+  const L = res.listing.listing, main = res.main, life = res.lifestyle || [];
+  const pics = [main.image, ...life.map(s=>s.image)].filter(Boolean);
+  const att = main.attempts || [];
+  const firstBad = att.find(a=>a.problems && a.problems.length);
+  const viol = res.listing.attempts.flatMap(a=>a.violations.map(v=>({...v, attempt:a.attempt})));
+  const fixed = viol.filter(v=>v.severity==="fail");
+  const checksTable = [
+    ...(att.length ? att[att.length-1].pixel_checks.map(c=>[c.ok, c.detail, "Seller Forums (Amazon)"]) : []),
+    [true, `Title ${L.title.length}/75 characters`, "75-char title rule, 2026-07-27"],
+    [true, `Search terms ${new TextEncoder().encode(L.search_terms).length}/249 bytes`, "Keyword limit"],
+    [true, `${L.bullets.length} bullets, no emojis, claims or guarantees`, "Bullet point policy"],
+  ];
+  $("#result").innerHTML = `
+    <h2>Listing</h2>
+    <div class="gallery"><div class="hero"><img id="hero" src="${pics[0]||""}" alt="main image"></div>
+      <div class="thumbs">${pics.map((p,i)=>`<img src="${p}" class="${i?"":"on"}" data-i="${i}" alt="">`).join("")}</div></div>
+    <div class="lt">${esc(L.title)}</div>
+    <div class="meta">${L.title.length} characters · brand ${esc(res.brand)}</div>
+    <ul class="bul">${L.bullets.map(b=>`<li>${esc(b)}</li>`).join("")}</ul>
+    <div class="desc">${esc(L.description)}</div>
+    <div class="kw">search terms: ${esc(L.search_terms)}</div>
+    ${firstBad ? `<div class="rep"><h2>What the agent caught and fixed</h2><div class="before">
+        <figure><img src="/runs/${id}/input.jpg"><figcaption>Seller photo</figcaption></figure>
+        <figure><img src="${firstBad.image}"><figcaption class="no">Rejected: ${esc(firstBad.problems[0]).slice(0,80)}</figcaption></figure>
+        <figure><img src="${main.image}"><figcaption class="ok">Final (attempt ${att.length})</figcaption></figure></div></div>` : ""}
+    <div class="rep"><h2>Compliance report</h2><table>
+      ${checksTable.map(([ok,d,s])=>`<tr><td class="${ok?"ok":"no"}">${ok?"✓":"✕"}</td><td>${esc(d)}<br><a>${esc(s)}</a></td></tr>`).join("")}
+      ${fixed.length?`<tr><td class="ok">↺</td><td>${fixed.length} copy violation(s) found and fixed by the agent</td></tr>`:""}
+      ${(res.facts.uncertain||[]).length?`<tr><td style="color:var(--warn)">?</td><td>Confirm before publishing: ${esc(res.facts.uncertain.join(", "))}</td></tr>`:""}
+    </table></div>
+    <a class="dl" href="${res.package}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download listing package</a>`;
+  $("#result .thumbs").onclick = e => { const i=e.target.dataset.i; if(i===undefined) return; $("#hero").src=pics[i]; document.querySelectorAll("#result .thumbs img").forEach(x=>x.classList.toggle("on", x.dataset.i===i)); };
+}
+</script>
+</body>
+</html>
