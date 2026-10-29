@@ -40,7 +40,13 @@ def fill_enclosed_holes(photo: Image.Image, mask: np.ndarray, see_through_dist: 
     from scipy import ndimage
 
     m = mask.astype(bool)
-    holes = ndimage.binary_fill_holes(m) & ~m
+    # SAM may leave out a part that reaches the product's edge (a wrap-around label), so the gap is
+    # not enclosed. Seal narrow gaps with a closing first; whatever that adds is judged like any hole.
+    bb = mask_bbox(mask)
+    r = max(3, int(0.03 * max(bb[2] - bb[0], bb[3] - bb[1]))) if bb else 3
+    padded = np.pad(m, r)
+    sealed = ndimage.binary_closing(padded, iterations=r)[r:-r, r:-r] | m
+    holes = ndimage.binary_fill_holes(sealed) & ~m
     labels, n = ndimage.label(holes)
     if n == 0:
         return mask, {"filled": 0, "kept_open": 0}
@@ -65,8 +71,14 @@ def fill_enclosed_holes(photo: Image.Image, mask: np.ndarray, see_through_dist: 
             out |= region
             filled += 1
             continue
-        dist = float(np.linalg.norm(np.median(a[region], axis=0) - np.median(near, axis=0)))
-        if dist < see_through_dist:
+        hole = np.median(a[region], axis=0)
+        dist = float(np.linalg.norm(hole - np.median(near, axis=0)))
+        # A real opening looks like the background, and more like it than like the product around it.
+        # On plain studio backgrounds a white label or pale wax is also close to the background colour,
+        # but it matches the product ring around it better, so it is filled.
+        ring = ndimage.binary_dilation(region, iterations=5) & m
+        ring_dist = float(np.linalg.norm(hole - np.median(a[ring], axis=0))) if ring.sum() >= 30 else 1e9
+        if dist < see_through_dist and dist + 25 < ring_dist:
             kept += 1
         else:
             out |= region

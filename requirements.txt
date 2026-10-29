@@ -6,3 +6,4 @@ numpy>=1.26
 python-multipart>=0.0.9
 pytest>=8
 scipy>=1.13
+meta-sam-parser>=0.1.0

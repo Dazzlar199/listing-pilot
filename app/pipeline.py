@@ -162,6 +162,7 @@ def make_lifestyle(run: Run, main_file: str | None, photo: Image.Image, facts: d
 
 def package(run: Run, result: dict) -> str:
     listing = result["listing"]["listing"]
+    result["package"] = run.url("listing_package.zip")  # in listing.json too, so the UI's download link works
     with open(run.dir / "listing.json", "w") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
     buf = io.StringIO()
