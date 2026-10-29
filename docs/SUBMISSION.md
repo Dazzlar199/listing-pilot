@@ -8,7 +8,7 @@
 **Theme:** Build for Your World
 
 **Repository:** https://github.com/Dazzlar199/listing-pilot
-**Demo video:** <VIDEO LINK>
+**Demo video:** https://youtu.be/cdQST9uV04Q
 
 ## Description
 
